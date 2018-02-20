@@ -1,0 +1,15 @@
+{
+    "name": "mmo-server",
+    "version": "0.0.1",
+    "private": true,
+    "dependencies": {
+        "bcrypt": "^1.0.3",
+        "binary-parser": "*",
+        "bluebird": "^3.5.1",
+        "extend": "*",
+        "minimist": "*",
+        "mongoose": "*",
+        "performance-now": "*",
+        "underscore": "*"
+    }
+}
