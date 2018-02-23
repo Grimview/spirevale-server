@@ -6,7 +6,7 @@ var extend = require('extend');
 var environment = args.env || "production";
 
 // Common configuration (i.e. name, version, max players, etc.)
-var common_conf = {
+var test_conf = {
     name: "MMO Game Server",
     version: "0.1.0",
     environment: environment,
@@ -18,6 +18,19 @@ var common_conf = {
     },
     starting_zone: "rm_map_home"
 };
+
+var prod_conf = {
+    name: "MMO Game Server",
+    version: "0.1.0",
+    environment: environment,
+    max_player: 100,
+    data_paths: {
+        items: __dirname + "/data/" + "items/",
+        items: __dirname + "/data/" + "maps/",
+        items: __dirname + "/data/" + "npcs/"
+    },
+    starting_zone: "rm_map_home"
+}
 
 // Environment-specific configuration
 var conf = {
@@ -36,7 +49,7 @@ var conf = {
     }
 };
 
-extend(false, conf.production, common_conf);
-extend(false, conf.test, common_conf);
+extend(false, conf.production, prod_conf);
+extend(false, conf.test, test_conf);
 
 module.exports = config = conf[environment];
