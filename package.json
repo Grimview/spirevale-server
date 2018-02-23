@@ -1,15 +1,6 @@
 {
     "name": "mmo-server",
     "version": "0.1.0",
-    "description": "The official server for Spirevale.",
-    "engines": {
-        "node": "8.9.1"
-    },
-    "main": "server.js",
-    "scripts": {
-        "start": "node server.js",
-        "test": "node test.js"
-    },
     "private": true,
     "dependencies": {
         "bcrypt": "^1.0.3",
@@ -22,19 +13,5 @@
         "mongoose-plugin-autoinc": "^1.1.7",
         "performance-now": "*",
         "underscore": "*"
-    },
-    "devDependencies": {
-        "request": "^2.81.0",
-        "tape": "^4.7.0"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/Grimview/spirevale-server"
-    },
-    "keywords": [
-        "node",
-        "heroku",
-        "express"
-    ],
-    "license": "MIT"
+    }
 }
