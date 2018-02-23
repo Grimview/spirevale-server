@@ -49,7 +49,7 @@ var conf = {
     }
 };
 
-extend(false, conf.production, prod_conf);
+extend(false, conf.production, test_conf);
 extend(false, conf.test, test_conf);
 
 module.exports = config = conf[environment];
