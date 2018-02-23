@@ -20,6 +20,15 @@ map_files.forEach(function(mapFile) {
     maps[map.room] = map;
 });
 
+// Load the npcs
+npcs = {};
+var npc_files = fs.readdirSync(config.data_paths.npcs);
+npc_files.forEach(function(npcFile) {
+    console.log("Packing map file, " + npcFile + ".");
+    var npc = require(config.data_paths.npcs + npcFile);
+    npcs[npc.id] = npc;
+});
+
 // Load the models
 var model_files = fs.readdirSync(__dirname + "/models");
 model_files.forEach(function(modelFile) {

@@ -5,15 +5,28 @@ module.exports = PacketModels = {
     header: new Parser().skip(1)
         .string("command", StringOptions),
     
-    login: new Parser().skip(1)
+    latency: new Parser().skip(1)
         .string("command", StringOptions)
-        .string("username", StringOptions)
-        .string("password", StringOptions),
+        .string("time", StringOptions),
     
     register: new Parser().skip(1)
         .string("command", StringOptions)
-        .string("username", StringOptions)
+        .string("firstName", StringOptions)
+        .string("lastName", StringOptions)
+        .string("birthMonth", StringOptions)
+        .string("birthDay", StringOptions)
+        .string("birthYear", StringOptions)
+        .string("email", StringOptions)
         .string("password", StringOptions),
+    
+    login: new Parser().skip(1)
+        .string("command", StringOptions)
+        .string("email", StringOptions)
+        .string("password", StringOptions),
+    
+    spawn: new Parser().skip(1)
+        .string("command", StringOptions)
+        .string("name", StringOptions),
     
     position: new Parser().skip(1)
         .string("command", StringOptions)

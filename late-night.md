@@ -1,0 +1,3 @@
+There are some mornings that I wake up wrapped in darkness. Perfectly alert and apprehensive to my own existence, I feel the unsettling touch of loneliness creeping up my spine. These are the hours I pray for a sound to emerge from silence with the exclusive purpose of letting me know that I am not alone.
+
+Silence is an old friend that I used to know. My thoughts and I, having been fractured from the crusades, abandoned our ally. I remember feeling their essence as it was intensely positioned in the face of my own quittance. Are they anxious to approach me, or am I anxious to approach them?

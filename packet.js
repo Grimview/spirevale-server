@@ -62,33 +62,104 @@ module.exports = packet = {
         
         // Resolve the packet based on the command received.
         switch (header.command.toUpperCase()) {            
+            case "LATENCY":
+                var data = PacketModels.latency.parse(datapacket);
+
+                client.socket.write(packet.build(["LATENCY", data.time]));
+            break;
+
+            case "REGISTER":
+                var data = PacketModels.register.parse(datapacket);
+
+                Player.register(data.firstName, data.lastName, data.birthMonth, data.birthDay, data.birthYear, data.email, data.password, function(successful) {
+                    if (successful) {
+                        client.socket.write(packet.build(["REGISTER", "TRUE"]));
+                    } else {
+                        client.socket.write(packet.build(["REGISTER", "FALSE"]));
+                    }
+                });
+            break;
+
+            case "LOGIN":
+                var data = PacketModels.login.parse(datapacket);
+
+                Player.login(data.email, data.password, function(successful, player) {
+                    if (successful) {
+                        client.player = player;
+
+                        client.socket.write(packet.build(["LOGIN", "TRUE"]));
+                    } else {
+                        client.socket.write(packet.build(["LOGIN", "FALSE"]));
+                    }
+
+                    // DEBUG: Log the login result.
+                    // console.log('Login Result ' + successful);
+                });
+            break;
+
+            case "SPAWN":
+                var data = PacketModels.spawn.parse(datapacket);
+
+                //console.log("Received spawn packet.");
+
+                var success = false;
+
+                Character.findOne({player_id: client.player.id, name: data.name}, function(err, character) {
+                    if (!err && character) {
+                        client.character = character;
+                        success = true;
+                    } else {
+                        Character.create(client.player.id, data.name, "spr_Hero", 4, maps[config.starting_zone].room, maps[config.starting_zone].start_x, maps[config.starting_zone].start_y, 100, 100, 100, 100, 100, 100, 1, 10, 0, 50, function(successful, character) {
+                            if (successful) {
+                                client.character = character;
+                                success = true;
+                            }
+                        });
+                    }
+
+                    if (success) {
+                        client.enterroom(client.character.current_room);
+
+                        client.character.save();
+
+                        client.socket.write(packet.build(["SPAWN", client.character.name, client.character.current_room, client.character.pos_x, client.character.pos_y, client.character.health, client.character.maxHealth, client.character.thirst, client.character.maxThirst, client.character.hunger, client.character.maxHunger, client.character.woodcutting, client.character.maxWoodcutting, client.character.woodcuttingExp, client.character.maxWoodcuttingExp]));
+                    } else {
+                    }
+                });
+
+                // DEBUG: Log which player logged in.
+                // console.log(client.character.username + " has logged in.");
+            break;
+
+            case "POSITION":
+                var data = PacketModels.position.parse(datapacket);
+                client.character.pos_x = data.target_x;
+                client.character.pos_y = data.target_y;
+                client.character.facing = data.facing;
+                //client.player.save();
+                client.broadcastroom(packet.build(["POSITION", client.character.name, data.target_x, data.target_y, data.facing]));
+                //console.log(data);
+            break;
+
+            case "CHAT":
+                var data = PacketModels.chat.parse(datapacket);
+                
+                console.log(client.character.name + " said: " + data.message);
+            break;
+
             // ------------------------------ //
             // - UPDATE THE PLAYER'S THIRST - //
             // ------------------------------ //
             case "THIRST":
                 var data = PacketModels.thirst.parse(datapacket);
-                client.bitmason.thirst += data.amount;
+                client.player.thirst += data.amount;
                 
-                if (client.bitmason.thirst > 100) {
-                    client.bitmason.thirst = 100;
+                if (client.player.thirst > 100) {
+                    client.player.thirst = 100;
                 }
                 
-                //client.bitmason.save();
-                client.socket.write(packet.build(["THIRST", client.bitmason.thirst, client.bitmason.maxThirst]));
-            break;
-
-            // -------------------------------- //
-            // - UPDATE THE PLAYER'S POSITION - //
-            // -------------------------------- //
-            case "POSITION":
-                var data = PacketModels.position.parse(datapacket);
-                client.bitmason.pos_x = data.target_x;
-                client.bitmason.pos_y = data.target_y;
-                client.bitmason.facing = data.facing;
-                //client.bitmason.save();
-                client.broadcastroom(packet.build(["POSITION", client.bitmason.username, data.target_x, data.target_y,
-                                            data.facing]));
-                //console.log(data);
+                //client.player.save();
+                client.socket.write(packet.build(["THIRST", client.player.thirst, client.player.maxThirst]));
             break;
             
             // ------------------------------ //
@@ -96,18 +167,9 @@ module.exports = packet = {
             // ------------------------------ //
             case "HEALTH":
                 var data = PacketModels.health.parse(datapacket);
-                client.bitmason.health += data.damage;
-                //client.bitmason.save();
-                client.socket.write(packet.build(["HEALTH", client.bitmason.health, client.bitmason.maxHealth]));
-            break;
-            
-            // ----------------------- //
-            // - SEND A CHAT MESSAGE - //
-            // ----------------------- //
-            case "CHAT":
-                var data = PacketModels.chat.parse(datapacket);
-                
-                console.log(client.bitmason.username + " said: " + data.message);
+                client.player.health += data.damage;
+                //client.player.save();
+                client.socket.write(packet.build(["HEALTH", client.player.health, client.player.maxHealth]));
             break;
             
             // ---------------------------------- //
@@ -118,72 +180,22 @@ module.exports = packet = {
 
                 switch (data.skill) {
                     case "woodcutting":
-                        client.bitmason.woodcuttingExp += data.amount;
+                        client.player.woodcuttingExp += data.amount;
 
-                        if (client.bitmason.woodcuttingExp > client.bitmason.maxWoodcuttingExp) {
-                            client.bitmason.woodcuttingExp -= client.bitmason.maxWoodcuttingExp;
+                        if (client.player.woodcuttingExp > client.player.maxWoodcuttingExp) {
+                            client.player.woodcuttingExp -= client.player.maxWoodcuttingExp;
 
-                            client.bitmason.woodcutting += 1;
+                            client.player.woodcutting += 1;
 
-                            client.bitmason.maxWoodcuttingExp *= 2;
+                            client.player.maxWoodcuttingExp *= 2;
                         }
 
-                        client.socket.write(packet.build(["EXP", client.bitmason.woodcuttingExp,
-                                                    client.bitmason.maxWoodcuttingExp, client.bitmason.woodcutting]));
+                        client.socket.write(packet.build(["EXP", client.player.woodcuttingExp,
+                                                    client.player.maxWoodcuttingExp, client.player.woodcutting]));
                     break;
                 }
 
-                // client.bitmason.save();
-            break;
-
-            // --------------------- //
-            // - LOGIN TO THE GAME - //
-            // --------------------- //
-            case "LOGIN":
-                // Parse the data packet using the login packet model.
-                var data = PacketModels.login.parse(datapacket);
-
-                // Call the bitmason model login function.
-                Bitmason.login(data.username, data.password, function(successful, bitmason) {
-                    if (successful) {
-                        // Set the bitmason to the bitmason logging in.
-                        // Add the bitmason to it's room based on the database.
-                        // Send a login packet with a true result.
-                        client.bitmason = bitmason;
-                        client.bitmason.logged_in = true;
-                        client.enterroom(client.bitmason.current_room);
-                        client.bitmason.save();
-                        client.socket.write(packet.build(["LOGIN", "TRUE", client.bitmason.current_room, client.bitmason.pos_x,
-                                                    client.bitmason.pos_y, client.bitmason.username, client.bitmason.health,
-                                                    client.bitmason.maxHealth, client.bitmason.thirst, client.bitmason.maxThirst,
-                                                    client.bitmason.hunger, client.bitmason.maxHunger, client.bitmason.woodcutting,
-                                                    client.bitmason.maxWoodcutting, client.bitmason.woodcuttingExp,
-                                                    client.bitmason.maxWoodcuttingExp]));
-
-                        // DEBUG: Log which bitmason logged in.
-                        // console.log(client.bitmason.username + " has logged in.");
-                    } else {
-                        // Send a login packet with a false result.
-                        client.socket.write(packet.build(["LOGIN", "FALSE"]));
-                    }
-
-                    // DEBUG: Log the login result.
-                    // console.log('Login Result ' + successful);
-                });
-            break;
-
-            // ------------------------- //
-            // - REGISTER FOR THE GAME - //
-            // ------------------------- //
-            case "REGISTER":
-                var data = PacketModels.register.parse(datapacket);
-                Bitmason.register(data.username, data.password, function(successful) {
-                    if (successful) {
-                        client.socket.write(packet.build(["REGISTER", "TRUE"]));
-                    } else {
-                        client.socket.write(packet.build(["REGISTER", "FALSE"]));
-                    }
-                });
+                // client.player.save();
             break;
         }
 

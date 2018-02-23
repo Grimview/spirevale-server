@@ -9,6 +9,8 @@
         "extend": "*",
         "minimist": "*",
         "mongoose": "*",
+        "mongoose-auto-increment": "^5.0.1",
+        "mongoose-plugin-autoinc": "^1.1.7",
         "performance-now": "*",
         "underscore": "*"
     }

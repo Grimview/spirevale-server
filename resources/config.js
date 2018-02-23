@@ -3,7 +3,7 @@ var args = require('minimist')(process.argv.slice(2));
 var extend = require('extend');
 
 // Store the environment variable
-var environment = args.env || "test";
+var environment = args.env || "production";
 
 // Common configuration (i.e. name, version, max players, etc.)
 var common_conf = {
@@ -13,7 +13,8 @@ var common_conf = {
     max_player: 100,
     data_paths: {
         items: __dirname + "\\data\\" + "items\\",
-        maps: __dirname + "\\data\\" + "maps\\"
+        maps: __dirname + "\\data\\" + "maps\\",
+        npcs: __dirname + "\\data\\" + "npcs\\"
     },
     starting_zone: "rm_map_home"
 };
@@ -23,7 +24,7 @@ var conf = {
     production: {
         ip: args.ip || "0.0.0.0",
         port: args.port || "8081",
-        database: "mongodb://localhost:27017/mmogame"
+        database: "mongodb://sabbonaut:sene4Ase@ds127536.mlab.com:27536/mmogame"
         //database: "mongodb://sabearstian:sene4Ase@ds123976.mlab.com:23976/mmogame"
     },
     

@@ -1,14 +1,9 @@
-// Implements a function that returns an hr-time stamp.
 var now = require('performance-now');
-// Functional Programming Helpers library.
 var _ = require('underscore');
 
 module.exports = function() {
     var client = this;
-    
-    // These objects will be added at runtime
-    
-    // Initialisation
+
     this.initiate = function() {
         // Send the connection handshake packet to the client.
         client.socket.write(packet.build(["HELLO", now().toString()]));
@@ -16,25 +11,25 @@ module.exports = function() {
         // DEBUG: Log that a client has been initialised.
         // console.log('Client initialised.');
     };
-    
-    // Client methods
+
     this.enterroom = function(selected_room) {
         maps[selected_room].clients.forEach(function(otherClient) {
-            otherClient.socket.write(packet.build(["ENTER", client.bitmason.username, client.bitmason.pos_x, client.bitmason.pos_y]));
+            // Send a position packet to all clients in the selected room.
+            otherClient.socket.write(packet.build(["POSITION", client.character.name, client.character.pos_x, client.character.pos_y, client.character.facing]));
         });
         
+        // Add current client to the selected room's client list.
         maps[selected_room].clients.push(client);
     };
     
     this.broadcastroom = function(packetData) {
-        maps[client.bitmason.current_room].clients.forEach(function(otherClient) {
-            if (otherClient.bitmason.username != client.bitmason.username) {
+        maps[client.character.current_room].clients.forEach(function(otherClient) {
+            if (otherClient.character.name != client.character.name) {
                 otherClient.socket.write(packetData);
-            };
+            }
         });
     };
-    
-    // Socket Stuff
+
     this.data = function(data) {
         packet.parse(client, data);
     };
@@ -44,23 +39,19 @@ module.exports = function() {
     };
     
     this.end = function() {
-        var i = 0;
+        if (client.character != undefined) {
+            for (var i = 0; i < maps[client.character.current_room].clients.length; i++) {
+                if(maps[client.character.current_room].clients[i].character.name == client.character.name){
+                    maps[client.character.current_room].clients.splice(i, 1);
+                } else {
+                    maps[client.character.current_room].clients[i].socket.write(packet.build(["LOGOUT", client.character.name]));
+                }
+            }
 
-        // DEBUG: Log the client that is disconnecting.
-        // console.log(client.bitmason.username + " has disconnected.");
-        
-        maps[client.bitmason.current_room].clients.forEach(function(otherClient){
-            //console.log("Looping through clients: " + i.toString() + " = " +  maps[client.bitmason.current_room].clients[i].bitmason.username);
-            
-            if(otherClient.bitmason.username == client.bitmason.username){
-                //console.log("Removing index " + i.toString() + " from clients");
-                maps[client.bitmason.current_room].clients.splice(i, 1);
-                //console.log("maps[].clients: " + maps[client.bitmason.current_room].clients);
-            };
-            
-            i += 1;
-        });
-        client.bitmason.logged_in = false;
-        client.bitmason.save();
+            client.character.save();
+
+            // DEBUG: Log the client that is disconnecting.
+            // console.log(client.character.name + " has disconnected.");
+        }
     };
 };
