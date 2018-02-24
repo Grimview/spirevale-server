@@ -1,24 +1,28 @@
 var zeroBuffer = new Buffer('00', 'hex');
 
 module.exports = packet = {
-    // ------------------------------------ //
-    // - BUILD PACKETS TO SEND TO CLIENTS - //
-    // ------------------------------------ //
+    // #region Build
     build: function(params) {
-        // params: an array of javascript objects to be turned into buffers
-
         var packetParts = [];
         var packetSize = 0;
         
-        params.forEach(function(param) {
+        params.forEach(function(param, index) {
             var buffer;
             
-            if (typeof param === 'string') {
+            if (index == 0) {
+                buffer = new Buffer(1);
+                buffer.writeUInt8(param, 0);
+            } else if (typeof param === 'string') {
                 buffer = new Buffer(param, 'utf8');
                 buffer = Buffer.concat([buffer, zeroBuffer], buffer.length + 1);
             } else if (typeof param === 'number') {
                 buffer = new Buffer(2);
                 buffer.writeUInt16LE(param, 0);
+            } else if (typeof param === 'boolean') {
+                var convertedParam = param ? 1 : 0;
+
+                buffer = new Buffer(1);
+                buffer.writeUInt8(convertedParam, 0);
             } else {
                 console.log("WARNING: Unknown data type in packet builder!");
             }
@@ -36,10 +40,9 @@ module.exports = packet = {
         
         return finalPacket;
     },
-    
-    // --------------------------------------- //
-    // - PARSE PACKETS RECEIVED FROM CLIENTS - //
-    // --------------------------------------- //
+    // #endregion
+
+    // #region Parse
     parse: function(client, data) {
         var idx = 0;
         
@@ -53,153 +56,118 @@ module.exports = packet = {
             idx += packetSize;
         }
     },
-    
-    // ------------------------------------------- //
-    // - INTERPRET PACKETS RECEIVED FROM CLIENTS - //
-    // ------------------------------------------- //
+    // #endregion
+
+    // #region Interpret
     interpret: function(client, datapacket) {
         var header = PacketModels.header.parse(datapacket);
-        
-        // Resolve the packet based on the command received.
-        switch (header.command.toUpperCase()) {            
-            case "LATENCY":
-                var data = PacketModels.latency.parse(datapacket);
 
-                client.socket.write(packet.build(["LATENCY", data.time]));
+        switch (header.command) {
+            // #region Handshake
+            case 0:
+                // Handle the handshake packet.
             break;
+            // #endregion
 
-            case "REGISTER":
+            // #region Register
+            case 1:
                 var data = PacketModels.register.parse(datapacket);
 
-                Player.register(data.firstName, data.lastName, data.birthMonth, data.birthDay, data.birthYear, data.email, data.password, function(successful) {
+                Player.register(data.firstName, data.lastName, data.month, data.day, data.year, data.email, data.password, function(successful) {
                     if (successful) {
-                        client.socket.write(packet.build(["REGISTER", "TRUE"]));
+                        client.socket.write(packet.build([1, true]));
                     } else {
-                        client.socket.write(packet.build(["REGISTER", "FALSE"]));
+                        client.socket.write(packet.build([1, false]));
                     }
                 });
             break;
+            // #endregion
 
-            case "LOGIN":
+            // #region Login
+            case 2:
                 var data = PacketModels.login.parse(datapacket);
 
                 Player.login(data.email, data.password, function(successful, player) {
                     if (successful) {
                         client.player = player;
 
-                        client.socket.write(packet.build(["LOGIN", "TRUE"]));
+                        client.socket.write(packet.build([2, true]));
                     } else {
-                        client.socket.write(packet.build(["LOGIN", "FALSE"]));
+                        client.socket.write(packet.build([2, false]));
                     }
-
-                    // DEBUG: Log the login result.
-                    // console.log('Login Result ' + successful);
                 });
             break;
+            // #endregion
+            
+            // #region Character List
+            case 3:
+                Character.findOne({player_id: client.player.id}, function(err, character) {
+                    if (!err && character) {
+                        client.socket.write(packet.build([3, true, character.name]));
+                    } else {
+                        client.socket.write(packet.build([3, false]));
+                    }
+                });
+            break;
+            // #endregion
 
-            case "SPAWN":
+            // #region New Character
+            case 4:
+                var data = PacketModels.newcharacter.parse(datapacket);
+
+                Character.create(client.player.id, data.name, "spr_Hero", 4, maps[config.starting_zone].room, maps[config.starting_zone].start_x, maps[config.starting_zone].start_y, 100, 100, 100, 100, 100, 100, 1, 10, 0, 50, function(successful, character) {
+                    if (successful) {
+                        Character.findOne({player_id: client.player.id}, function(err, character) {
+                            if (!err && character) {
+                                client.socket.write(packet.build([3, true, character.name]));
+                            } else {
+                                client.socket.write(packet.build([3, false]));
+                            }
+                        });
+                    }
+                });
+            break;
+            // #endregion
+
+            // #region Spawn
+            case 5:
                 var data = PacketModels.spawn.parse(datapacket);
-
-                //console.log("Received spawn packet.");
-
-                var success = false;
 
                 Character.findOne({player_id: client.player.id, name: data.name}, function(err, character) {
                     if (!err && character) {
                         client.character = character;
-                        success = true;
-                    } else {
-                        Character.create(client.player.id, data.name, "spr_Hero", 4, maps[config.starting_zone].room, maps[config.starting_zone].start_x, maps[config.starting_zone].start_y, 100, 100, 100, 100, 100, 100, 1, 10, 0, 50, function(successful, character) {
-                            if (successful) {
-                                client.character = character;
-                                success = true;
-                            }
-                        });
-                    }
-
-                    if (success) {
+                        
                         client.enterroom(client.character.current_room);
 
                         client.character.save();
 
-                        client.socket.write(packet.build(["SPAWN", client.character.name, client.character.current_room, client.character.pos_x, client.character.pos_y, client.character.health, client.character.maxHealth, client.character.thirst, client.character.maxThirst, client.character.hunger, client.character.maxHunger, client.character.woodcutting, client.character.maxWoodcutting, client.character.woodcuttingExp, client.character.maxWoodcuttingExp]));
-                    } else {
+                        client.socket.write(packet.build([5, client.character.name, client.character.current_room, client.character.pos_x, client.character.pos_y, client.character.health, client.character.maxHealth, client.character.thirst, client.character.maxThirst, client.character.hunger, client.character.maxHunger, client.character.woodcutting, client.character.maxWoodcutting, client.character.woodcuttingExp, client.character.maxWoodcuttingExp]));
                     }
                 });
-
-                // DEBUG: Log which player logged in.
-                // console.log(client.character.username + " has logged in.");
             break;
+            // #endregion
 
-            case "POSITION":
+            // #region Position
+            case 6:
                 var data = PacketModels.position.parse(datapacket);
                 client.character.pos_x = data.target_x;
                 client.character.pos_y = data.target_y;
                 client.character.facing = data.facing;
-                //client.player.save();
-                client.broadcastroom(packet.build(["POSITION", client.character.name, data.target_x, data.target_y, data.facing]));
-                //console.log(data);
-            break;
 
-            case "CHAT":
+                //client.player.save();
+
+                client.broadcastroom(packet.build([6, client.character.name, data.target_x, data.target_y, data.facing]));
+            break;
+            // #endregion
+
+            // #region Chat
+            case 7:
                 var data = PacketModels.chat.parse(datapacket);
                 
                 console.log(client.character.name + " said: " + data.message);
             break;
-
-            // ------------------------------ //
-            // - UPDATE THE PLAYER'S THIRST - //
-            // ------------------------------ //
-            case "THIRST":
-                var data = PacketModels.thirst.parse(datapacket);
-                client.player.thirst += data.amount;
-                
-                if (client.player.thirst > 100) {
-                    client.player.thirst = 100;
-                }
-                
-                //client.player.save();
-                client.socket.write(packet.build(["THIRST", client.player.thirst, client.player.maxThirst]));
-            break;
-            
-            // ------------------------------ //
-            // - UPDATE THE PLAYER'S HEALTH - //
-            // ------------------------------ //
-            case "HEALTH":
-                var data = PacketModels.health.parse(datapacket);
-                client.player.health += data.damage;
-                //client.player.save();
-                client.socket.write(packet.build(["HEALTH", client.player.health, client.player.maxHealth]));
-            break;
-            
-            // ---------------------------------- //
-            // - UPDATE THE PLAYER'S EXPERIENCE - //
-            // ---------------------------------- //
-            case "EXP":
-                var data = PacketModels.exp.parse(datapacket);
-
-                switch (data.skill) {
-                    case "woodcutting":
-                        client.player.woodcuttingExp += data.amount;
-
-                        if (client.player.woodcuttingExp > client.player.maxWoodcuttingExp) {
-                            client.player.woodcuttingExp -= client.player.maxWoodcuttingExp;
-
-                            client.player.woodcutting += 1;
-
-                            client.player.maxWoodcuttingExp *= 2;
-                        }
-
-                        client.socket.write(packet.build(["EXP", client.player.woodcuttingExp,
-                                                    client.player.maxWoodcuttingExp, client.player.woodcutting]));
-                    break;
-                }
-
-                // client.player.save();
-            break;
+            // #endregion
         }
-
-        // DEBUG: Log the packet being interpreted.
-        // console.log("Interpret: " + header.command);
     }
+    // #endregion
 };

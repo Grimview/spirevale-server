@@ -1,46 +1,54 @@
-// Import required libraries
-require(__dirname + '/resources/config.js');
+// #region Libraries
 var fs = require('fs');
 var net = require('net');
+
+require(__dirname + '/resources/config.js');
 require('./packet.js');
 
-// Load the initialisers
+// #region Initialisers
 var init_files = fs.readdirSync(__dirname + "/initialisers");
 init_files.forEach(function(initFile) {
-    console.log("Packing initialiser file, " + initFile + ".");
+    // console.log("Packing initialiser file, " + initFile + ".");
+
     require(__dirname + "/initialisers/" + initFile);
 });
+// #endregion
 
-// Load the maps
+// #region Maps
 maps = {};
 var map_files = fs.readdirSync(config.data_paths.maps);
 map_files.forEach(function(mapFile) {
-    console.log("Packing map file, " + mapFile + ".");
+    // console.log("Packing map file, " + mapFile + ".");
+
     var map = require(config.data_paths.maps + mapFile);
     maps[map.room] = map;
 });
+// #endregion
 
-// Load the npcs
+// #region NPCs
 npcs = {};
 var npc_files = fs.readdirSync(config.data_paths.npcs);
 npc_files.forEach(function(npcFile) {
-    console.log("Packing map file, " + npcFile + ".");
+    // console.log("Packing map file, " + npcFile + ".");
+
     var npc = require(config.data_paths.npcs + npcFile);
     npcs[npc.id] = npc;
 });
+// #endregion
 
-// Load the models
+// #region Models
 var model_files = fs.readdirSync(__dirname + "/models");
 model_files.forEach(function(modelFile) {
-    console.log("Packing model file, " + modelFile + ".");
+    // console.log("Packing model file, " + modelFile + ".");
+
     require(__dirname + "/models/" + modelFile);
 });
+// #endregion
+// #endregion
 
-// Initialise the server and listen to the internet
 net.createServer(function(socket) {
-    // Server logic
-    var c_inst = new require('./client.js');
-    var thisClient = new c_inst();
+    var clientInstance = new require('./client.js');
+    var thisClient = new clientInstance();
     
     thisClient.socket = socket;
     thisClient.initiate();
@@ -50,11 +58,7 @@ net.createServer(function(socket) {
     socket.on('end', thisClient.end);
     
     socket.on('data', thisClient.data);
-    
-    // DEBUG: Log that a client has connected.
-    // console.log("Client connected.");
 }).listen(config.port);
 
-// DEBUG: Log that the server has been initialised.
-// console.log("Initialisation completed. Server is running on port: " + config.port + " for environment: " + config.environment);
-console.log("The server is listening for clients.");
+// Log that the server is running on a specified port.
+console.log("The server is running on port " + config.port + " in the " + config.environment + " environment.");

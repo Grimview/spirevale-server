@@ -1,16 +1,14 @@
 {
-    "name": "mmo-server",
+    "name": "spirevale-server",
     "version": "0.1.0",
-    "private": true,
     "dependencies": {
-        "bcrypt": "^1.0.3",
+        "bcrypt": "*",
         "binary-parser": "*",
-        "bluebird": "^3.5.1",
+        "bluebird": "*",
         "extend": "*",
         "minimist": "*",
         "mongoose": "*",
-        "mongoose-auto-increment": "^5.0.1",
-        "mongoose-plugin-autoinc": "^1.1.7",
+        "mongoose-plugin-autoinc": "*",
         "performance-now": "*",
         "underscore": "*"
     }

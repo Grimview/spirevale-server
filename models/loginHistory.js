@@ -2,6 +2,7 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 var autoIncrement = require('mongoose-plugin-autoinc');
 
+// #region Schema
 var loginHistorySchema = new Schema({
     id: Number,
     player_id: Number,
@@ -11,7 +12,9 @@ var loginHistorySchema = new Schema({
 });
 
 loginHistorySchema.plugin(autoIncrement.plugin, {model: 'LoginHistory', field: 'id'});
+// #endregion
 
+// #region New Login History Entry
 loginHistorySchema.statics.entry = function(cb) {
     var today = new Date();
 
@@ -30,5 +33,6 @@ loginHistorySchema.statics.entry = function(cb) {
         }
     });
 };
+// #endregion
 
 module.exports = LoginHistory = gamedb.model('LoginHistory', loginHistorySchema);

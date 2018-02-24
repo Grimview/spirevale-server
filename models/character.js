@@ -2,6 +2,7 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 var autoIncrement = require('mongoose-plugin-autoinc');
 
+// #region Schema
 var characterSchema = new Schema({
     id: Number,
     player_id: Number,
@@ -31,7 +32,9 @@ var characterSchema = new Schema({
 });
 
 characterSchema.plugin(autoIncrement.plugin, {model: 'Character', field: 'id'});
+// #endregion
 
+// #region Create New Character
 characterSchema.statics.create = function(player_id, name, sprite, facing, current_room, pos_x, pos_y, health, maxHealth, thirst, maxThirst, hunger, maxHunger, woodcutting, maxWoodcutting, woodcuttingExp, maxWoodcuttingExp, cb) {
     var new_character = new Character({
         player_id: player_id,
@@ -67,5 +70,6 @@ characterSchema.statics.create = function(player_id, name, sprite, facing, curre
         }
     });
 };
+// #endregion
 
 module.exports = Character = gamedb.model('Character', characterSchema);

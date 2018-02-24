@@ -3,51 +3,55 @@ var StringOptions = {length: 99, zeroTerminated: true};
 
 module.exports = PacketModels = {
     header: new Parser().skip(1)
-        .string("command", StringOptions),
+        .uint8("command", StringOptions),
     
-    latency: new Parser().skip(1)
-        .string("command", StringOptions)
-        .string("time", StringOptions),
-    
+    // #region Register
     register: new Parser().skip(1)
-        .string("command", StringOptions)
+        .uint8("command", StringOptions)
         .string("firstName", StringOptions)
         .string("lastName", StringOptions)
-        .string("birthMonth", StringOptions)
-        .string("birthDay", StringOptions)
-        .string("birthYear", StringOptions)
+        .string("month", StringOptions)
+        .string("day", StringOptions)
+        .string("year", StringOptions)
         .string("email", StringOptions)
         .string("password", StringOptions),
+    // #endregion
     
+    // #region Login
     login: new Parser().skip(1)
-        .string("command", StringOptions)
+        .uint8("command", StringOptions)
         .string("email", StringOptions)
         .string("password", StringOptions),
+    // #endregion
     
-    spawn: new Parser().skip(1)
-        .string("command", StringOptions)
+    // #region Character List
+    character: new Parser().skip(1)
+        .uint8("command", StringOptions),
+    // #endregion
+    
+    // #region New Character
+    newcharacter: new Parser().skip(1)
+        .uint8("command", StringOptions)
         .string("name", StringOptions),
+    // #endregion
     
+    // #region Spawn
+    spawn: new Parser().skip(1)
+        .uint8("command", StringOptions)
+        .string("name", StringOptions),
+    // #endregion
+
+    // #region Position
     position: new Parser().skip(1)
-        .string("command", StringOptions)
-        .int32le("target_x", StringOptions)
-        .int32le("target_y", StringOptions)
-        .int32le("facing", StringOptions),
-    
-    health: new Parser().skip(1)
-        .string("command", StringOptions)
-        .int32le("damage", StringOptions),
-    
-    thirst: new Parser().skip(1)
-        .string("command", StringOptions)
-        .int32le("amount", StringOptions),
-    
+        .uint8("command", StringOptions)
+        .uint16le("target_x", StringOptions)
+        .uint16le("target_y", StringOptions)
+        .uint16le("facing", StringOptions),
+    // #endregion
+
+    // #region Chat
     chat: new Parser().skip(1)
-        .string("command", StringOptions)
-        .string("message", StringOptions),
-    
-    exp: new Parser().skip(1)
-        .string("command", StringOptions)
-        .string("skill", StringOptions)
-        .int32le("amount", StringOptions)
+        .uint8("command", StringOptions)
+        .string("message", StringOptions)
+    // #endregion
 }

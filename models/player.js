@@ -5,6 +5,7 @@ var autoIncrement = require('mongoose-plugin-autoinc');
 
 SALT_WORK_FACTOR = 10;
 
+// #region Schema
 var playerSchema = new Schema({
     id: Number,
     firstName: String,
@@ -17,7 +18,9 @@ var playerSchema = new Schema({
 });
 
 playerSchema.plugin(autoIncrement.plugin, {model: 'Player', field: 'id'});
+// #endregion
 
+// #region Save
 playerSchema.pre('save', function (next) {
     var player = this;
     
@@ -34,7 +37,9 @@ playerSchema.pre('save', function (next) {
         });
     });
 });
+// #endregion
 
+// #region Compare Passwords
 playerSchema.methods.comparePassword = function (received_password, callback) {
     bcrypt.compare(received_password, this.password, function (err, isMatch) {
         if (err) {
@@ -44,7 +49,9 @@ playerSchema.methods.comparePassword = function (received_password, callback) {
         callback(undefined, isMatch);
     });
 };
+// #endregion
 
+// #region Register New Account
 playerSchema.statics.register = function(firstName, lastName, birthMonth, birthDay, birthYear, email, password, cb) {
     var new_player = new Player({
         firstName: firstName,
@@ -64,7 +71,9 @@ playerSchema.statics.register = function(firstName, lastName, birthMonth, birthD
         }
     });
 };
+// #endregion
 
+// #region Login
 playerSchema.statics.login = function(email, password, cb) {
     Player.findOne({email: email}, function(err, player){
         if (!err && player) {
@@ -80,5 +89,6 @@ playerSchema.statics.login = function(email, password, cb) {
         }
     });
 };
+// #endregion
 
 module.exports = Player = gamedb.model('Player', playerSchema);
